@@ -44,17 +44,15 @@ public class ServletAuthorization extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String email = req.getParameter("email");
         String password = req.getParameter("password");
-        Cookie emailCook = new Cookie("email", email);
-        Cookie passwordCook = new Cookie("password", password);
-        if (email != null && password != null){
-            req.setAttribute("email" , emailCook);
-            req.setAttribute("password" , passwordCook);
-            req.getRequestDispatcher("/jsp/entrance.jsp");
-        }
 
             try {
-                if (userRepository.authorization(email, password) && userRepository.generateUUID(email, password)) {
-
+                if (userRepository.authorization(email, password) && userRepository.workUUID(email, password)) {
+                    Cookie emailCook = new Cookie("email", email);
+                    emailCook.setMaxAge(3000);
+                    Cookie passwordCook = new Cookie("password", password);
+                    passwordCook.setMaxAge(3000);
+                    resp.addCookie(emailCook);
+                    resp.addCookie(passwordCook);
                     req.getRequestDispatcher("/HTML/hello.html").forward(req, resp);
                 } else {
                     req.getRequestDispatcher("/HTML/notFound.html").forward(req, resp);

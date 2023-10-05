@@ -20,6 +20,8 @@ public class UserRepositoryJDBC implements UserRepository {
     private static final String GEN_UUID = "insert into users_uuid(users_id,uuid) values (? , ?)";
     //language=sql
     private static final String GET_ID = "select id from users ";
+    //language=sql
+    private static final String GET_UUID = "select users_id from users_uuid ";
 
     public UserRepositoryJDBC(Connection connection) {
         this.connection = connection;
@@ -66,24 +68,28 @@ public class UserRepositoryJDBC implements UserRepository {
     }
 
     @Override
-    public boolean generateUUID(String email, String password) throws SQLException {
+    public boolean workUUID(String email, String password) throws SQLException {
         preparedStatementRU = connection.prepareStatement(LOGIN);
         preparedStatementRU.setString(1, email);
         ResultSet set = preparedStatementRU.executeQuery();
         if (set.next()) {
             if (set.getString("password").equals(password)) {
                 int id = set.getInt("id");
-                if (id != 0) {
-                    UUID uuid = UUID.randomUUID();
-                    PreparedStatement preparedStatementRU2 = connection.prepareStatement(GEN_UUID);
-                    preparedStatementRU2.setInt(1,id);
-                    preparedStatementRU2.setObject(2, uuid);
-                    preparedStatementRU2.executeUpdate();
-                    return true;
+                PreparedStatement preparedStatementUUID = connection.prepareStatement(GET_UUID);
+                ResultSet resultSetUUID = preparedStatementUUID.executeQuery();
+                if (resultSetUUID.next()) {
+                    if (resultSetUUID.getInt("users_id") == id) {
+                        return true;
+                    } else {
+                        UUID uuid = UUID.randomUUID();
+                        PreparedStatement preparedStatementRU2 = connection.prepareStatement(GEN_UUID);
+                        preparedStatementRU2.setInt(1, id);
+                        preparedStatementRU2.setObject(2, uuid);
+                        preparedStatementRU2.executeUpdate();
+                    }
                 }
             }
-
-
+            return false;
         }
         return false;
     }
